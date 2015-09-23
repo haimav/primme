@@ -15,6 +15,7 @@ USE_NATIVE    ?= yes
 USE_PETSC     ?= $(if $(findstring undefined,$(origin PETSC_DIR)),no,yes)
 USE_PARASAILS ?= $(if $(findstring undefined,$(origin PARASAILS_LIB_DIR)),no,yes)
 USE_MPI       ?= $(if $(findstring mpi,$(CC)),yes,no)
+USE_RSB       ?= no
 
 ifeq ($(USE_MPI), yes)
   DEFINES += -DUSE_MPI
@@ -46,6 +47,15 @@ ifeq ($(USE_PETSC), yes)
   FINCLUDE += $(PETSC_FCPPFLAGS)
   LIBDIRS += $(PETSC_C_SH_LIB_PATH)
   LIBS += $(PETSC_LIB)
+endif
+
+ifeq ($(USE_RSB), yes)
+  DEFINES += -DUSE_RSB
+  SOBJS += COMMON/rsbw.o
+  override INCLUDE += -I$(LIBRSB_INCLUDE_DIR)
+  LIBDIRS += -L$(LIBRSB_LIB_DIR)
+  override LIBS += -lrsb
+  override LDFLAGS += -fopenmp
 endif
 
 

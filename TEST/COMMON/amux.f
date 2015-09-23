@@ -30,6 +30,7 @@ c
       real*8 t
       integer i, k
 c-----------------------------------------------------------------------
+c$omp parallel do schedule(guided)
       do 100 i = 1,n
 c
 c     compute the inner product of row i with vector x
@@ -43,6 +44,7 @@ c     store result in y(i)
 c
          y(i) = t
  100  continue
+c$omp end parallel do
 c
       return
 c---------end-of-amux---------------------------------------------------

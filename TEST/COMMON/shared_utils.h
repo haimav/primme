@@ -39,7 +39,8 @@ typedef enum {
    driver_default,
    driver_native,
    driver_petsc,
-   driver_parasails
+   driver_parasails,
+   driver_rsb
 } driver_mat;
 
 typedef enum {

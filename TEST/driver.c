@@ -66,6 +66,9 @@
 #ifdef USE_PETSC
 # include "petscw.h"
 #endif
+#ifdef USE_RSB
+#  include "rsbw.h"
+#endif
 
 /* primme.h header file is required to run primme */
 #include "primme.h"
@@ -615,6 +618,41 @@ static int setMatrixAndPrecond(driver_params *driver, primme_params *primme, int
       }
 #endif
       break;
+
+   case driver_rsb:
+#if !defined(USE_RSB)
+      fprintf(stderr, "ERROR: RSB is needed!\n");
+      return -1;
+#else
+#  if defined(USE_MPI)
+      if (numProcs != 1) {
+         fprintf(stderr, "ERROR: MPI is not supported with RSB, use other!\n");
+         return -1;
+      }
+      *(MPI_Comm*)primme->commInfo = MPI_COMM_WORLD;
+#  endif
+      {
+         blas_sparse_matrix *matrix;
+         matrix = (blas_sparse_matrix *)primme_calloc(1, sizeof(blas_sparse_matrix), "matrix");
+         
+         if (readMatrixRSB(driver->matrixFileName, matrix, &primme->aNorm) !=0 )
+            return -1;
+         primme->matrix = matrix;
+         primme->matrixMatvec = RSBMatvec;
+         primme->n = primme->nLocal = BLAS_usgp(*matrix, blas_num_rows);
+         switch(driver->PrecChoice) {
+         case driver_noprecond:
+            primme->preconditioner = NULL;
+            primme->applyPreconditioner = NULL;
+            break;
+         default:
+            assert(0);
+            break;
+         }
+      }
+#endif
+      break;
+
    }
 
 #if defined(USE_MPI)
