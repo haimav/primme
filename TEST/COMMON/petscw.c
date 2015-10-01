@@ -113,7 +113,7 @@ static PetscErrorCode loadmtx(const char* filename, Mat *M, PetscBool *pattern) 
    /* first read to set matrix kind and size */
    ierr = mm_read_banner(f,&type);CHKERRQ(ierr);
    if (!mm_is_valid(type) || !mm_is_sparse(type) ||
-       !(mm_is_real(type) || mm_is_complex(type) || mm_is_pattern(type)))
+       !(mm_is_real(type) || mm_is_complex(type) || mm_is_pattern(type) || mm_is_integer(type)))
       SETERRQ1(PETSC_COMM_SELF,1,"Matrix format '%s' not supported",mm_typecode_to_str(type)); 
 #if !defined(PETSC_USE_COMPLEX)
    if (mm_is_complex(type)) SETERRQ(PETSC_COMM_SELF,1,"Complex matrix not supported in real configuration"); 

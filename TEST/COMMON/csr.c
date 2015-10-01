@@ -112,9 +112,9 @@ static int readfullMTX(const char *mtfile, PRIMME_NUM **AA, int **JA, int **IA, 
    if(mm_read_banner(matrixFile, &type) != 0) return -1;
    if (!mm_is_valid(type) || !mm_is_sparse(type) || mm_is_skew(type)
 #ifndef USE_DOUBLECOMPLEX
-       || mm_is_complex(type) || mm_is_hermitian(type) || !(mm_is_real(type))
+       || mm_is_complex(type) || mm_is_hermitian(type)
 #endif
-      ) {
+       || !(mm_is_real(type) || mm_is_complex(type) || mm_is_pattern(type) || mm_is_integer(type))) {
       fprintf(stderr, "Matrix format '%s' not supported!", mm_typecode_to_str(type)); 
       return -1;
    }

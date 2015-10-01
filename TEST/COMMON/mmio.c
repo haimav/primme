@@ -234,7 +234,7 @@ int mm_read_mtx_crd_entry(FILE *f, int *I, int *J,
             if (fscanf(f, "%d %d %lg %lg", I, J, real, imag)
                 != 4) return MM_PREMATURE_EOF;
     }
-    else if (mm_is_real(matcode))
+    else if (mm_is_real(matcode) || mm_is_integer(matcode))
     {
             if (fscanf(f, "%d %d %lg\n", I, J, real)
                 != 3) return MM_PREMATURE_EOF;
