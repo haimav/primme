@@ -56,7 +56,7 @@ void update_projection_zprimme(Complex_Z *X, Complex_Z *Y, Complex_Z *Z,
    int numCols, int maxCols, int blockSize, Complex_Z *rwork, 
    primme_params *primme) {
 
-   int j;    /* Loop variable  */ 
+   int i,j,k;    /* Loop variables  */ 
    int count;
    Complex_Z tpone = {+1.0e+00,+0.0e00}, tzero = {+0.0e+00,+0.0e00};
 
@@ -90,6 +90,18 @@ void update_projection_zprimme(Complex_Z *X, Complex_Z *Y, Complex_Z *Z,
    }
    */
    
-   count = 2*(blockSize == 1 ? numCols+1 : maxCols)*blockSize;
+   /* Compact upper triangular part of rwork */
+   for (i = 1, j = numCols+1 ; i <= blockSize-1; i++) {
+      for (k=0; k<numCols+i+1; k++) {
+         rwork[j++] = rwork[i*maxCols+k];
+      }
+   }
+   count = 2*j;
    (*primme->globalSumDouble)(rwork, &Z[maxCols*numCols], &count, primme);
+   /* Restore Z as an upper triangular matrix */
+   for (i = blockSize-1; i >= 1; i--) {
+      for (k=numCols+i; k>=0; k--) {
+         Z[maxCols*numCols+i*maxCols+k] = rwork[--j];
+      }
+   }
 }

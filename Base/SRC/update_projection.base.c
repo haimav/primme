@@ -56,7 +56,7 @@ void update_projection_@(pre)primme(@(type) *X, @(type) *Y, @(type) *Z,
    int numCols, int maxCols, int blockSize, @(type) *rwork, 
    primme_params *primme) {
 
-   int j;    /* Loop variable  */ 
+   int i,j,k;    /* Loop variables  */ 
    int count;
    @(type) tpone = @(tpone), tzero = @(tzero);
 
@@ -90,11 +90,23 @@ void update_projection_@(pre)primme(@(type) *X, @(type) *Y, @(type) *Z,
    }
    */
    
+   /* Compact upper triangular part of rwork */
+   for (i = 1, j = numCols+1 ; i <= blockSize-1; i++) {
+      for (k=0; k<numCols+i+1; k++) {
+         rwork[j++] = rwork[i*maxCols+k];
+      }
+   }
 #ifdefarithm L_DEFCPLX
-   count = 2*(blockSize == 1 ? numCols+1 : maxCols)*blockSize;
+   count = 2*j;
 #endifarithm
 #ifdefarithm L_DEFREAL
-   count = (blockSize == 1 ? numCols+1 : maxCols)*blockSize;
+   count = j;
 #endifarithm
    (*primme->globalSumDouble)(rwork, &Z[maxCols*numCols], &count, primme);
+   /* Restore Z as an upper triangular matrix */
+   for (i = blockSize-1; i >= 1; i--) {
+      for (k=numCols+i; k>=0; k--) {
+         Z[maxCols*numCols+i*maxCols+k] = rwork[--j];
+      }
+   }
 }
