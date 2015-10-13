@@ -90,6 +90,6 @@ void update_projection_dprimme(double *X, double *Y, double *Z,
    }
    */
    
-   count = maxCols*blockSize;
+   count = (blockSize == 1 ? numCols+1 : maxCols)*blockSize;
    (*primme->globalSumDouble)(rwork, &Z[maxCols*numCols], &count, primme);
 }

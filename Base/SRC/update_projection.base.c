@@ -91,10 +91,10 @@ void update_projection_@(pre)primme(@(type) *X, @(type) *Y, @(type) *Z,
    */
    
 #ifdefarithm L_DEFCPLX
-   count = 2*maxCols*blockSize;
+   count = 2*(blockSize == 1 ? numCols+1 : maxCols)*blockSize;
 #endifarithm
 #ifdefarithm L_DEFREAL
-   count = maxCols*blockSize;
+   count = (blockSize == 1 ? numCols+1 : maxCols)*blockSize;
 #endifarithm
    (*primme->globalSumDouble)(rwork, &Z[maxCols*numCols], &count, primme);
 }

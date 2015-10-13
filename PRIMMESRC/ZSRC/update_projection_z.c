@@ -90,6 +90,6 @@ void update_projection_zprimme(Complex_Z *X, Complex_Z *Y, Complex_Z *Z,
    }
    */
    
-   count = 2*maxCols*blockSize;
+   count = 2*(blockSize == 1 ? numCols+1 : maxCols)*blockSize;
    (*primme->globalSumDouble)(rwork, &Z[maxCols*numCols], &count, primme);
 }
