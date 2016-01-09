@@ -282,7 +282,6 @@ int main_iter_zprimme(double *evals, int *perm, Complex_Z *evecs,
    /* ------------------------------------------------ */
 
    if (primme->n == 2) {
-      primme->minRestartSize = 2;
       primme->restartingParams.maxPrevRetain = 0;
    }
 
@@ -497,7 +496,15 @@ int main_iter_zprimme(double *evals, int *perm, Complex_Z *evecs,
                                __FILE__, __LINE__, primme);
                return SOLVE_H_FAILURE;
             }
-            
+
+            /* If basis were full, the difference between the current and the previous
+               Ritz values could be too large, and this can make some convergence
+               tests fail */
+            if (basisSize == primme->n) {
+               numPrevRitzVals = basisSize;
+               Num_dcopy_primme(numPrevRitzVals, hVals, 1, prevRitzVals, 1);
+            }
+
            /* --------------------------------------------------------------- */
          } /* while (basisSize<maxBasisSize && basisSize<n-orthoConst-numLocked)
             * --------------------------------------------------------------- */
@@ -869,11 +876,6 @@ void check_reset_flags_zprimme(int *flag, int *numConverged,
    int i;
 
    reset_flags_zprimme(flag, primme->numEvals, primme->maxBasisSize-1);
-
-   /* If basis were full, the difference between the current and the previous
-      Ritz values could be too large; so this test isn't made */
-   if (numPrevRitzVals + primme->maxBlockSize >= primme->n)
-      return;
 
    if (primme->aNorm <= 0.0L) {
       tol = tol * aNormEstimate;
