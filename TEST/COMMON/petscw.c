@@ -372,38 +372,57 @@ void PETScMatvecSVD(void *x, int *ldx, void *y, int *ldy, int *blockSize, int *t
 
 static void ApplyPCPrecPETSCGen(void *x, int *ldx, void *y, int *ldy, int *blockSize, 
                                 int trans, PC *pc, MPI_Comm comm) {
-   int i;
+   int i, j, numPC=1;
    Vec xvec, yvec;
    Mat matrix;
    PetscErrorCode ierr;
-   PetscInt mLocal, nLocal;
+   PetscInt mLocal=0, nLocal=0, mLocal0, nLocal0;
+   PetscContainer container=NULL;
    
    ierr = PCGetOperators(pc[0],&matrix,NULL); CHKERRABORT(comm, ierr);
-
+   ierr = PetscObjectQuery((PetscObject)matrix,"numPC",(PetscObject*)&container); CHKERRABORT(comm, ierr);
+   if (container) {
+      PetscInt *ptr;
+      ierr = PetscContainerGetPointer(container,(void**)&ptr); CHKERRABORT(comm, ierr);
+      numPC = *ptr;
+      assert(trans == 0);
+   }
+ 
    assert(sizeof(PetscScalar) == sizeof(PRIMME_NUM));   
-   ierr = MatGetLocalSize(matrix, &mLocal, &nLocal); CHKERRABORT(comm, ierr);
+   for (j=0; j<numPC; j++) {
+      ierr = PCGetOperators(pc[j],&matrix,NULL); CHKERRABORT(comm, ierr);
+      ierr = MatGetLocalSize(matrix, &mLocal0, &nLocal0); CHKERRABORT(comm, ierr);
+      mLocal =+ mLocal0;
+      nLocal =+ nLocal0;
+   }
    assert(mLocal == nLocal && nLocal <= *ldx && mLocal <= *ldy);
 
+   for (j=mLocal=nLocal=0; j<numPC; j++) {
+      ierr = PCGetOperators(pc[j],&matrix,NULL); CHKERRABORT(comm, ierr);
+      ierr = MatGetLocalSize(matrix, &mLocal0, &nLocal0); CHKERRABORT(comm, ierr);
    #if PETSC_VERSION_LT(3,6,0)
       ierr = MatGetVecs(matrix, &xvec, &yvec); CHKERRABORT(comm, ierr);
    #else
       ierr = MatCreateVecs(matrix, &xvec, &yvec); CHKERRABORT(comm, ierr);
    #endif
-   for (i=0; i<*blockSize; i++) {
-      ierr = VecPlaceArray(xvec, ((PRIMME_NUM*)x) + (*ldx)*i); CHKERRABORT(comm, ierr);
-      ierr = VecPlaceArray(yvec, ((PRIMME_NUM*)y) + (*ldy)*i); CHKERRABORT(comm, ierr);
-      if (trans == 0) {
-         ierr = PCApply(*pc, xvec, yvec); CHKERRABORT(comm, ierr);
-      } else if (pc[1]) {
-         ierr = PCApply(pc[1], xvec, yvec); CHKERRABORT(comm, ierr);
-      } else {
-         ierr = PCApplyTranspose(pc[0], xvec, yvec);
+      for (i=0; i<*blockSize; i++) {
+         ierr = VecPlaceArray(xvec, ((PRIMME_NUM*)x) + (*ldx)*i + nLocal); CHKERRABORT(comm, ierr);
+         ierr = VecPlaceArray(yvec, ((PRIMME_NUM*)y) + (*ldy)*i + mLocal); CHKERRABORT(comm, ierr);
+         if (trans == 0) {
+            ierr = PCApply(pc[j], xvec, yvec); CHKERRABORT(comm, ierr);
+         } else if (pc[1]) {
+            ierr = PCApply(pc[1], xvec, yvec); CHKERRABORT(comm, ierr);
+         } else {
+            ierr = PCApplyTranspose(pc[0], xvec, yvec);
+         }
+         ierr = VecResetArray(xvec); CHKERRABORT(comm, ierr);
+         ierr = VecResetArray(yvec); CHKERRABORT(comm, ierr);
       }
-      ierr = VecResetArray(xvec); CHKERRABORT(comm, ierr);
-      ierr = VecResetArray(yvec); CHKERRABORT(comm, ierr);
+      ierr = VecDestroy(&xvec); CHKERRABORT(comm, ierr);
+      ierr = VecDestroy(&yvec); CHKERRABORT(comm, ierr);
+      mLocal =+ mLocal0;
+      nLocal =+ nLocal0;
    }
-   ierr = VecDestroy(&xvec); CHKERRABORT(comm, ierr);
-   ierr = VecDestroy(&yvec); CHKERRABORT(comm, ierr);
 }
 
 

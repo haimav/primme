@@ -620,11 +620,16 @@ static int setMatrixAndPrecond(driver_params *driver,
          case driver_bjacobi:
             {
                PetscErrorCode ierr;
-               Mat C, localA, localAt, At;
+               Mat C, localA, localA0, localAt, At;
                IS iscols, isrows;
-               PetscInt lowj, highj;
+               PetscInt lowj, highj, numPC, n, nLocal, bs, *ptr, i;
                MPI_Comm comm;
-               pc = (PC *)primme_calloc(1, sizeof(PC), "pc");
+               PetscContainer container;
+               n = primme_svds->m > primme_svds->n ? primme_svds->n : primme_svds->m;
+               nLocal = primme_svds->m > primme_svds->n ? primme_svds->nLocal : primme_svds->mLocal;
+               bs = driver->level ? min(nLocal, driver->level) : nLocal;
+               numPC = (nLocal+bs-1)/bs;
+               pc = (PC *)primme_calloc(numPC, sizeof(PC), "pc");
                if (primme_svds->m > primme_svds->n) {
                   ierr = MatHermitianTranspose(*matrix,MAT_INITIAL_MATRIX,&A);CHKERRQ(ierr);
                   ierr = PetscObjectGetComm((PetscObject)*matrix,&comm);CHKERRQ(ierr);
@@ -633,33 +638,45 @@ static int setMatrixAndPrecond(driver_params *driver,
                   ierr = MatGetSubMatrix(A,isrows,NULL,MAT_INITIAL_MATRIX,&At);CHKERRQ(ierr);
                   ierr = MatDestroy(&A);CHKERRQ(ierr);
                   ierr = ISDestroy(&isrows);CHKERRQ(ierr);
-                  ierr = MatMPIAIJGetLocalMat(At, MAT_INITIAL_MATRIX, &localA);
+                  ierr = MatMPIAIJGetLocalMat(At, MAT_INITIAL_MATRIX, &localA0);
                   ierr = MatDestroy(&At);CHKERRQ(ierr);
                }
                else {
-                  ierr = MatMPIAIJGetLocalMat(*matrix, MAT_INITIAL_MATRIX, &localA);
+                  ierr = MatMPIAIJGetLocalMat(*matrix, MAT_INITIAL_MATRIX, &localA0);
                }
-               ierr = MatHermitianTranspose(localA, MAT_INITIAL_MATRIX, &localAt); CHKERRQ(ierr);
-               ierr = MatMatMult(localA,localAt,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C);CHKERRQ(ierr);
-               ierr = MatDestroy(&localA);CHKERRQ(ierr);
-               ierr = MatDestroy(&localAt);CHKERRQ(ierr);
-               ierr = PetscObjectGetComm((PetscObject)C, &comm);CHKERRQ(ierr);
-               ierr = PCCreate(comm, pc); CHKERRQ(ierr);
+               for (i=lowj=0; lowj<nLocal; i++, lowj+=bs, bs=min(bs,nLocal-lowj)) {
+                  ierr = ISCreateStride(PETSC_COMM_SELF, bs, lowj, 1, &isrows);CHKERRQ(ierr);
+                  ierr = MatGetSubMatrix(localA0,isrows,NULL,MAT_INITIAL_MATRIX,&localA);CHKERRQ(ierr);
+                  ierr = MatHermitianTranspose(localA, MAT_INITIAL_MATRIX, &localAt); CHKERRQ(ierr);
+                  ierr = MatMatMult(localA,localAt,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C);CHKERRQ(ierr);
+                  ierr = ISDestroy(&isrows);CHKERRQ(ierr);
+                  ierr = MatDestroy(&localA);CHKERRQ(ierr);
+                  ierr = MatDestroy(&localAt);CHKERRQ(ierr);
+                  ierr = PetscObjectGetComm((PetscObject)C, &comm);CHKERRQ(ierr);
+                  ierr = PCCreate(comm, &pc[i]); CHKERRQ(ierr);
 #ifdef PETSC_HAVE_HYPRE
-               ierr = PCSetType(*pc, PCHYPRE); CHKERRQ(ierr);
-               ierr = PCHYPRESetType(*pc, "boomeramg"); CHKERRQ(ierr);
-#else
-               ierr = PCSetType(*pc, PCBJACOBI); CHKERRQ(ierr);
+                  if (bs > 500) {
+                     ierr = PCSetType(pc[i], PCHYPRE); CHKERRQ(ierr);
+                     ierr = PCHYPRESetType(pc[i], "boomeramg"); CHKERRQ(ierr);
+                  }
+                  else
 #endif
-               ierr = PCSetOperators(*pc, C, C); CHKERRQ(ierr);
-               ierr = PCSetFromOptions(*pc); CHKERRQ(ierr);
-               ierr = PCSetUp(*pc); CHKERRQ(ierr);
+                     ierr = PCSetType(pc[i], PCBJACOBI); CHKERRQ(ierr);
+                  ierr = PCSetOperators(pc[i], C, C); CHKERRQ(ierr);
+                  ierr = PCSetFromOptions(pc[i]); CHKERRQ(ierr);
+                  ierr = PCSetUp(pc[i]); CHKERRQ(ierr);
+                  ierr = MatDestroy(&C);CHKERRQ(ierr);
+               }
                primme_svds->preconditioner = pc;
                primme_svds->primme.applyPreconditioner = ApplyPCPrecPETSC;
                primme_svds->primme.preconditioner = pc;
                primme_svds->primme.correctionParams.precondition = 1;
                primme_svds->primme.commInfo = primme_svds->commInfo;
-               ierr = MatDestroy(&C);CHKERRQ(ierr);
+               ierr = PetscContainerCreate(comm, &container); CHKERRQ(ierr);
+               ierr = PetscNew(&ptr); CHKERRQ(ierr);
+               *ptr = numPC;
+               ierr = PetscContainerSetPointer(container, ptr); CHKERRQ(ierr);
+               ierr = PetscObjectCompose((PetscObject)pc[0],"numPC",(PetscObject)container); CHKERRQ(ierr);
             }
          }
       }
