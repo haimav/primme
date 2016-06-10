@@ -257,6 +257,7 @@ int restart_@(pre)primme(@(type) *V, @(type) *W, int nLocal, int basisSize, int 
    }
    else {
       *restartsSinceReset = 0;
+      if (Q) *targetShiftIndex = -1;
    }
    primme->stats.estimateResidualError = 2*sqrt((double)*restartsSinceReset)*machEps*aNorm;
    

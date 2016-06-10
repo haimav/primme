@@ -257,6 +257,7 @@ int restart_zprimme(Complex_Z *V, Complex_Z *W, int nLocal, int basisSize, int l
    }
    else {
       *restartsSinceReset = 0;
+      if (Q) *targetShiftIndex = -1;
    }
    primme->stats.estimateResidualError = 2*sqrt((double)*restartsSinceReset)*machEps*aNorm;
    

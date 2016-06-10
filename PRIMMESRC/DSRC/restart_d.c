@@ -257,6 +257,7 @@ int restart_dprimme(double *V, double *W, int nLocal, int basisSize, int ldV,
    }
    else {
       *restartsSinceReset = 0;
+      if (Q) *targetShiftIndex = -1;
    }
    primme->stats.estimateResidualError = 2*sqrt((double)*restartsSinceReset)*machEps*aNorm;
    
