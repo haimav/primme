@@ -710,7 +710,7 @@ int Num_reset_update_VWXR_dprimme(double *V, double *W, int mV, int nV, int ldV,
             &Wo[ldWo*(j-nWob)], &R[ldR*(j-nRb)]);
       if (Rnorms) {
          double ztmp;
-         ztmp = Num_dot_dprimme(m, &R[i+ldR*(j-nRb)], 1, &R[i+ldR*(j-nRb)], 1);
+         ztmp = Num_dot_dprimme(mV, &R[ldR*(j-nRb)], 1, &R[ldR*(j-nRb)], 1);
          Rnorms[j-nRb] = *(double*)&ztmp;
       }
    }

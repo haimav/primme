@@ -710,7 +710,7 @@ int Num_reset_update_VWXR_zprimme(Complex_Z *V, Complex_Z *W, int mV, int nV, in
             &Wo[ldWo*(j-nWob)], &R[ldR*(j-nRb)]);
       if (Rnorms) {
          Complex_Z ztmp;
-         ztmp = Num_dot_zprimme(m, &R[i+ldR*(j-nRb)], 1, &R[i+ldR*(j-nRb)], 1);
+         ztmp = Num_dot_zprimme(mV, &R[ldR*(j-nRb)], 1, &R[ldR*(j-nRb)], 1);
          Rnorms[j-nRb] = *(double*)&ztmp;
       }
    }
