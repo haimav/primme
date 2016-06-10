@@ -37,6 +37,6 @@ int restart_locking_dprimme(int *restartSize, double *V, double *W,
    double *blockNorms, double *evecs, double *evals, int *numConverged, int *numLocked,
    double *resNorms, int *evecsperm, int numGuesses, double *previousHVecs,
    int *numPrevRetained, int ldpreviousHVecs, int *indexOfPreviousVecs, int *hVecsPerm,
-   double machEps, double *rwork, int rworkSize, int *iwork, primme_params *primme);
+   int reset, double machEps, double *rwork, int rworkSize, int *iwork, primme_params *primme);
 
 #endif

@@ -42,7 +42,7 @@ static int restart_soft_locking_zprimme(int *restartSize, Complex_Z *V, Complex_
    double *blockNorms, Complex_Z *evecs, double *evals, double *resNorms,
    Complex_Z *evecsHat, int ldevecsHat, Complex_Z *M, int ldM, int *numConverged,
    int *numConvergedStored, Complex_Z *previousHVecs, int *numPrevRetained,
-   int ldpreviousHVecs, int *indexOfPreviousVecs, int *hVecsPerm, double machEps,
+   int ldpreviousHVecs, int *indexOfPreviousVecs, int *hVecsPerm, int reset, double machEps,
    Complex_Z *rwork, int rworkSize, int *iwork, primme_params *primme);
 
 static int restart_projection_zprimme(Complex_Z *V, int ldV, Complex_Z *W, int ldW,

@@ -367,7 +367,7 @@ static int allocate_workspace(primme_params *primme, int allocate) {
 
    convSize = check_convergence_zprimme(NULL, primme->nLocal, 0, &t, 0,
          NULL, primme->numEvals, 0, 0, primme->maxBasisSize, NULL, NULL,
-         NULL, 0.0, NULL, 0, NULL, primme);
+         NULL, NULL, 0.0, NULL, 0, NULL, primme);
 
    /*----------------------------------------------------------------------*/
    /* Determine workspace required by restarting and its children          */
@@ -379,7 +379,7 @@ static int allocate_workspace(primme_params *primme, int allocate) {
          &primme->numEvals, &primme->numEvals, NULL, &primme->restartingParams.maxPrevRetain,
          primme->maxBasisSize, primme->initSize, NULL, &primme->maxBasisSize, NULL,
          primme->maxBasisSize, NULL, 0, NULL, 0, NULL, 0, NULL,
-         0, 0, NULL, 0, 0, NULL, NULL, 0.0,
+         0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, 0.0,
          NULL, 0, NULL, primme);
 
    /*----------------------------------------------------------------------*/
@@ -392,7 +392,7 @@ static int allocate_workspace(primme_params *primme, int allocate) {
          prepare_candidates_zprimme(NULL, NULL, primme->nLocal, primme->maxBasisSize,
             0, NULL, NULL, NULL, 0, NULL, NULL, primme->numEvals, primme->numEvals,
             NULL, 0, primme->maxBlockSize, NULL, primme->numEvals, NULL, NULL, 0.0,
-            NULL, &primme->maxBlockSize, NULL, NULL, 0, NULL, primme));
+            NULL, &primme->maxBlockSize, NULL, NULL, NULL, 0, NULL, primme));
  
  
    /*----------------------------------------------------------------------*/

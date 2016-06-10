@@ -42,7 +42,7 @@ static int restart_soft_locking_dprimme(int *restartSize, double *V, double *W, 
    double *blockNorms, double *evecs, double *evals, double *resNorms,
    double *evecsHat, int ldevecsHat, double *M, int ldM, int *numConverged,
    int *numConvergedStored, double *previousHVecs, int *numPrevRetained,
-   int ldpreviousHVecs, int *indexOfPreviousVecs, int *hVecsPerm, double machEps,
+   int ldpreviousHVecs, int *indexOfPreviousVecs, int *hVecsPerm, int reset, double machEps,
    double *rwork, int rworkSize, int *iwork, primme_params *primme);
 
 static int restart_projection_dprimme(double *V, int ldV, double *W, int ldW,

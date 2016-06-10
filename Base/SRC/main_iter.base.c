@@ -179,6 +179,8 @@ int main_iter_@(pre)primme(double *evals, int *perm, @(type) *evecs,
                             /* by robust shifting algorithm in correction.c  */
    double *blockNorms;      /* Residual norms corresponding to current block */
                             /* vectors.                                      */
+   int reset=0;             /* Flag to reset V and W                         */
+   int restartsSinceReset=0;/* Restart since last reset of V and W           */
    @(type) tpone = @(tpone);/* constant 1.0 of type @(type) */
    @(type) tzero = @(tzero);/* constant 0.0 of type @(type) */
 
@@ -262,6 +264,7 @@ int main_iter_@(pre)primme(double *evals, int *perm, @(type) *evecs,
    primme->stats.estimateMinEVal   = HUGE_VAL;
    primme->stats.estimateLargestSVal = -HUGE_VAL;
    primme->stats.maxConvTol        = 0.0L;
+   primme->stats.estimateResidualError = 0.0L;
    if (primme->aNorm > 0.0L) {
       tol = primme->eps*primme->aNorm;
    }
@@ -422,7 +425,7 @@ int main_iter_@(pre)primme(double *evals, int *perm, @(type) *evecs,
                &V[basisSize*primme->nLocal], &W[basisSize*primme->nLocal], hVecs, basisSize,
                hVals, flags, numConverged-numLocked, maxRecentlyConverged, blockNorms,
                blockSize, availableBlockSize, evecs, numLocked, evals, resNorms, machEps,
-               iev, &blockSize, &recentlyConverged, rwork, rworkSize, iwork, primme);
+               iev, &blockSize, &recentlyConverged, &reset, rwork, rworkSize, iwork, primme);
 
             /* print residuals */
             print_residuals(hVals, blockNorms, numConverged, numLocked, iev, blockSize,
@@ -586,7 +589,8 @@ int main_iter_@(pre)primme(double *evals, int *perm, @(type) *evecs,
                primme->maxBasisSize, numGuesses, prevRitzVals, &numPrevRitzVals, H,
                primme->maxBasisSize, Q, primme->nLocal, R, primme->maxBasisSize, QV,
                primme->maxBasisSize, hU, basisSize, 0, hVecs, basisSize, 0, &basisSize,
-               &targetShiftIndex, machEps, rwork, rworkSize, iwork, primme);
+               &targetShiftIndex, &restartsSinceReset, &reset, machEps, rwork, rworkSize,
+               iwork, primme);
 
          /* If there are any initial guesses remaining, then copy it */
          /* into the basis, else flag the vector as locked so it may */
@@ -788,6 +792,9 @@ int main_iter_@(pre)primme(double *evals, int *perm, @(type) *evecs,
                fflush(primme->outputFile);
             }
 
+            restartsSinceReset = 0;
+            reset = 0;
+
            /* ------------------------------------------------------------ */
          } /* End of elseif(!converged). Restart and recompute all epairs
             * ------------------------------------------------------------ */
@@ -844,6 +851,10 @@ int main_iter_@(pre)primme(double *evals, int *perm, @(type) *evecs,
  * blockNorms    Residual norms of the Ritz vectors being computed during the
  *               current iteration
  * blockSize     Dimension of the block
+ *
+ * OUTPUT ARRAYS AND PARAMETERS
+ * ----------------------------
+ * reset         flag to reset V and W in the next restart
  * 
  ******************************************************************************/
 
@@ -852,7 +863,7 @@ int prepare_candidates_@(pre)primme(@(type) *V, @(type) *W, int nLocal, int basi
    int *flags, int numSoftLocked, int numEvals, double *blockNorms,
    int blockNormsSize, int maxBlockSize, @(type) *evecs, int numLocked,
    double *evals, double *resNorms, double machEps, int *iev, int *blockSize,
-   int *recentlyConverged, @(type) *rwork, int rworkSize, int *iwork,
+   int *recentlyConverged, int *reset, @(type) *rwork, int rworkSize, int *iwork,
    primme_params *primme) {
 
    int i, blki;            /* loop variables */
@@ -872,7 +883,8 @@ int prepare_candidates_@(pre)primme(@(type) *V, @(type) *W, int nLocal, int basi
 
       return maxBlockSize+maxBlockSize*basisSize+max(
          check_convergence_@(pre)primme(NULL, nLocal, 0, NULL, 0, NULL, numLocked, 0,
-               basisSize-maxBlockSize, basisSize, NULL, NULL, NULL, 0.0, NULL, 0, NULL, primme),
+               basisSize-maxBlockSize, basisSize, NULL, NULL, NULL, NULL, 0.0, NULL, 0,
+               NULL, primme),
          Num_update_VWXR_@(pre)primme(NULL, NULL, nLocal, basisSize, 0, NULL, 0, 0, NULL,
                &t, basisSize-maxBlockSize, basisSize, 0,
                NULL, 0, 0, 0,
@@ -906,7 +918,7 @@ int prepare_candidates_@(pre)primme(@(type) *V, @(type) *W, int nLocal, int basi
       /* Recompute flags in iev(*blockSize:*blockSize+blockNormsize) */
       ret = check_convergence_@(pre)primme(&X[(*blockSize)*ldV], nLocal, ldV,
          &R[(*blockSize)*ldV], ldV, evecs, numLocked, primme->nLocal, 0, blockNormsSize, flagsBlock,
-         &blockNorms[*blockSize], hValsBlock, machEps, rwork, rworkSize, iwork, primme);
+         &blockNorms[*blockSize], hValsBlock, reset, machEps, rwork, rworkSize, iwork, primme);
       if (ret != 0) return ret;
 
       /* Compact blockNorms, X and R for the unconverged pairs in    */

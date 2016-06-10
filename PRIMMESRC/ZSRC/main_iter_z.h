@@ -39,7 +39,7 @@ int prepare_candidates_zprimme(Complex_Z *V, Complex_Z *W, int nLocal, int basis
    int *flags, int numSoftLocked, int numEvals, double *blockNorms,
    int blockNormsSize, int maxBlockSize, Complex_Z *evecs, int numLocked,
    double *evals, double *resNorms, double machEps, int *iev, int *blockSize,
-   int *recentlyConverged, Complex_Z *rwork, int rworkSize, int *iwork,
+   int *recentlyConverged, int *reset, Complex_Z *rwork, int rworkSize, int *iwork,
    primme_params *primme);
 
 

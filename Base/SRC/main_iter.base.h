@@ -39,7 +39,7 @@ int prepare_candidates_@(pre)primme(@(type) *V, @(type) *W, int nLocal, int basi
    int *flags, int numSoftLocked, int numEvals, double *blockNorms,
    int blockNormsSize, int maxBlockSize, @(type) *evecs, int numLocked,
    double *evals, double *resNorms, double machEps, int *iev, int *blockSize,
-   int *recentlyConverged, @(type) *rwork, int rworkSize, int *iwork,
+   int *recentlyConverged, int *reset, @(type) *rwork, int rworkSize, int *iwork,
    primme_params *primme);
 
 
