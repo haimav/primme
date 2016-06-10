@@ -257,7 +257,8 @@ int restart_@(pre)primme(@(type) *V, @(type) *W, int nLocal, int basisSize, int 
    }
    else {
       *restartsSinceReset = 0;
-      if (Q) *targetShiftIndex = -1;
+      /* If using refining, reset V also */
+      if (Q) *reset = 2;
    }
    primme->stats.estimateResidualError = 2*sqrt((double)*restartsSinceReset)*machEps*aNorm;
    
@@ -632,7 +633,7 @@ static int restart_soft_locking_@(pre)primme(int *restartSize, @(type) *V, @(typ
  * Rnorms      Output array with the norms of R (optional)
  * rnorms      Output array with the extra residual vector norms (optional)
  * nrb, nre    Columns of residual vector to compute the norm
- * reset       if reset!=0, reothogonalize Xi and recompute Wo=A*X0
+ * reset       if reset>1, reothogonalize Xi; if reset>0, recompute Wo=A*X0
  * 
  * NOTE: n*e, n*b are zero-base indices of ranges where the first value is
  *       included and the last isn't.
@@ -685,20 +686,22 @@ int Num_reset_update_VWXR_@(pre)primme(@(type) *V, @(type) *W, int mV, int nV, i
 
    /* Reortho [X2 X0] against evecs if asked */
 
-   ret = ortho_@(pre)primme(evecs, ldevecs, NULL, 0, evecsSize, 
-         evecsSize+nX2e-nX2b-1, NULL, 0, 0, mV, primme->iseed, 
-         machEps, rwork, lrwork, primme);
-   if (ret != 0) return ret;
-   ret = ortho_@(pre)primme(X0, ldX0, NULL, 0, 0, nX2b-nX0b-1, evecs,
-         ldevecs, evecsSize+nX2e-nX2b, mV, primme->iseed, 
-         machEps, rwork, lrwork, primme);
-   if (ret != 0) return ret;
-   Num_copy_matrix_@(pre)primme(&evecs[ldevecs*evecsSize], mV, nX2e-nX2b,
-         ldevecs, &X0[ldX0*(nX2b-nX0b)], ldX0);
-   ret = ortho_@(pre)primme(X0, ldX0, NULL, 0, nX2e-nX0b, nX0e-nX0b, evecs,
-         ldevecs, evecsSize, mV, primme->iseed, machEps, rwork, lrwork,
-         primme);
-   if (ret != 0) return ret;
+   if (reset > 1) {
+      ret = ortho_@(pre)primme(evecs, ldevecs, NULL, 0, evecsSize, 
+            evecsSize+nX2e-nX2b-1, NULL, 0, 0, mV, primme->iseed, 
+            machEps, rwork, lrwork, primme);
+      if (ret != 0) return ret;
+      ret = ortho_@(pre)primme(X0, ldX0, NULL, 0, 0, nX2b-nX0b-1, evecs,
+            ldevecs, evecsSize+nX2e-nX2b, mV, primme->iseed, 
+            machEps, rwork, lrwork, primme);
+      if (ret != 0) return ret;
+      Num_copy_matrix_@(pre)primme(&evecs[ldevecs*evecsSize], mV, nX2e-nX2b,
+            ldevecs, &X0[ldX0*(nX2b-nX0b)], ldX0);
+      ret = ortho_@(pre)primme(X0, ldX0, NULL, 0, nX2e-nX0b, nX0e-nX0b, evecs,
+            ldevecs, evecsSize, mV, primme->iseed, machEps, rwork, lrwork,
+            primme);
+      if (ret != 0) return ret;
+   }
 
    /* Compute W = A*V for the orthogonalized corrections */
 
